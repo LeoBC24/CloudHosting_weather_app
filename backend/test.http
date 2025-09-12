@@ -1,0 +1,11 @@
+GET http://localhost:5000/lostit
+
+###
+
+GET https://localhost:7131
+###
+
+GET https://localhost:7131/lostit
+
+###
+GET https://my-own-supersimple-weather-app.azurewebsites.net/lostit
