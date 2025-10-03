@@ -3,7 +3,8 @@ name: Build and deploy ASP.Net Core app to Azure Web App
 env:
   AZURE_WEBAPP_NAME: my-own-supersimple-weather-app  # Your Azure Web App name
   DOTNET_VERSION: '9.0.x'                            # .NET version
-
+  AZURE_RESOURCE_GROUP: test1
+  AZURE_WEBAPP_PACKAGE_PATH: './backend'
 on:
   push:
     branches: [ "main" ]
@@ -18,7 +19,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actkout@v4
 
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
@@ -55,10 +56,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
+          path: .net-app
 
       - name: Deploy to Azure Web App using Publish Profile
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ${{ env.DOTNET_ROOT }}/myapp
+          package: './.net-app'
