@@ -1,9 +1,8 @@
-name: Build and deploy ASP.Net Core app to Azure Web App via Managed Identity
+name: Build and deploy ASP.Net Core app to Azure Web App
 
 env:
   AZURE_WEBAPP_NAME: my-own-supersimple-weather-app  # Your Azure Web App name
   DOTNET_VERSION: '9.0.x'                            # .NET version
-  AZURE_MANAGED_IDENTITY_CLIENT_ID: oidc-msi-8065   # Managed Identity client ID
 
 on:
   push:
@@ -11,8 +10,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  id-token: write
+  contents: read   # id-token not needed for publish profile
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -49,8 +48,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    environment:
-      name: 'Development'
+    environment: Development
 
     steps:
       - name: Download artifact
@@ -58,16 +56,9 @@ jobs:
         with:
           name: .net-app
 
-      - name: Azure login via Managed Identity (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ env.AZURE_MANAGED_IDENTITY_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
+      - name: Deploy to Azure Web App using Publish Profile
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ${{ env.DOTNET_ROOT }}/myapp
