@@ -3,7 +3,7 @@ name: Build and deploy ASP.Net Core backend to Azure Web App
 env:
   AZURE_WEBAPP_NAME: my-own-supersimple-weather-app  # Your Azure Web App name
   DOTNET_VERSION: '9.0.x'                            # .NET version
-  BACKEND_PROJECT_FILE: './CloudHosting_weather_app/backend/CloudHosting_weather_app.csproj'  # Replace with your actual .csproj
+  BACKEND_PROJECT_FILE: './CloudHosting_weather_app/backend/backend.csproj'  # Correct path to your .csproj
 
 on:
   push:
@@ -12,7 +12,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write  # Needed for OIDC login if using Azure login via OIDC
+  id-token: write  # Needed if using OIDC login
 
 jobs:
   build:
@@ -57,7 +57,7 @@ jobs:
         with:
           name: backend-artifact
 
-      - name: Azure login via OIDC (recommended)
+      - name: Azure login via OIDC
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_MANAGED_IDENTITY_CLIENT_ID }} # Optional if using Managed Identity
