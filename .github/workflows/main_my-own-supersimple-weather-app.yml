@@ -9,6 +9,7 @@ env:
   BACKEND_PROJECT: './backend/backend.csproj'
   AZURE_WEBAPP_NAME: 'my-own-supersimple-weather-app'
   PUBLISH_FOLDER: 'publish'
+  RESOURCE_GROUP: 'test1'
 
 permissions:
   contents: read
@@ -30,10 +31,16 @@ jobs:
         run: dotnet restore ${{ env.BACKEND_PROJECT }}
       
       - name: Build backend
-        run: dotnet build ${{ env.BACKEND_PROJECT }} --configuration Release
+        run: dotnet build ${{ env.BACKEND_PROJECT }} --configuration Release --no-restore
       
       - name: Publish backend
-        run: dotnet publish ${{ env.BACKEND_PROJECT }} -c Release -o ${{ env.PUBLISH_FOLDER }}
+        run: dotnet publish ${{ env.BACKEND_PROJECT }} -c Release -o ${{ env.PUBLISH_FOLDER }} --no-build
+      
+      - name: Create deployment package
+        run: |
+          cd ${{ env.PUBLISH_FOLDER }}
+          zip -r ../deploy.zip .
+          cd ..
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -42,14 +49,15 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_93512B23E2114B36909049BFD5CA264A }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_835A84E9F7684B3394294333562F1D26 }}
       
-      - name: Set Azure Web App Settings to disable Oryx
-        uses: azure/appservice-settings@v1
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          app-settings-json: '[{"name":"SCM_DO_BUILD_DURING_DEPLOYMENT","value":"false"}]'
+      - name: Disable Oryx build via Azure CLI
+        run: |
+          az webapp config appsettings set \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false WEBSITE_RUN_FROM_PACKAGE=1
       
-      - name: Deploy published folder to Azure Web App
+      - name: Deploy ZIP to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          package: ${{ env.PUBLISH_FOLDER }}
+          package: deploy.zip
