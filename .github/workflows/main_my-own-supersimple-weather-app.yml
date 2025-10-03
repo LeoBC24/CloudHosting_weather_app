@@ -1,5 +1,4 @@
 name: Build and deploy ASP.Net Core backend to Azure Web App
-
 on:
   push:
     branches: [ main ]
@@ -21,30 +20,32 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
+      
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
+      
       - name: Restore dependencies
         run: dotnet restore ${{ env.BACKEND_PROJECT }}
-
+      
       - name: Build backend
         run: dotnet build ${{ env.BACKEND_PROJECT }} --configuration Release
-
+      
       - name: Publish backend
         run: dotnet publish ${{ env.BACKEND_PROJECT }} -c Release -o ${{ env.PUBLISH_FOLDER }}
-
+      
       - name: Login to Azure
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_737AD74C2213402292E281AC06E82DD2 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_93512B23E2114B36909049BFD5CA264A }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_835A84E9F7684B3394294333562F1D26 }}
-
+      
       - name: Deploy published folder to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           package: ${{ env.PUBLISH_FOLDER }}
+        env:
+          SCM_DO_BUILD_DURING_DEPLOYMENT: false
