@@ -1,7 +1,7 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# Docs for Azure Web Apps Deploy: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy ASP.Net Core app to Azure Web App - my-own-supersimple-weather-app
+name: Build and deploy ASP.Net Core backend to Azure Web App
 
 on:
   push:
@@ -9,45 +9,60 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  DOTNET_VERSION: '9.x'
+  BACKEND_PROJECT: './CloudHosting_weather_app/backend/backend.csproj' # Path to your backend csproj
+  AZURE_WEBAPP_NAME: 'my-own-supersimple-weather-app'
+  PUBLISH_FOLDER: './publish'
+
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read # Required for actions/checkout
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x'
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
+      - name: Cache NuGet dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
-      - name: dotnet publish
-        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+      - name: Build backend project
+        run: dotnet build ${{ env.BACKEND_PROJECT }} --configuration Release
 
-      - name: Upload artifact for deployment job
+      - name: Publish backend project
+        run: dotnet publish ${{ env.BACKEND_PROJECT }} -c Release -o ${{ env.PUBLISH_FOLDER }}
+
+      - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          name: backend-artifact
+          path: ${{ env.PUBLISH_FOLDER }}
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write # Required if using OIDC login
+      contents: read
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: .net-app
-      
+          name: backend-artifact
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -56,10 +71,8 @@ jobs:
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_835A84E9F7684B3394294333562F1D26 }}
 
       - name: Deploy to Azure Web App
-        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'my-own-supersimple-weather-app'
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
           slot-name: 'Production'
-          package: .
-          
+          package: ${{ env.PUBLISH_FOLDER }}
