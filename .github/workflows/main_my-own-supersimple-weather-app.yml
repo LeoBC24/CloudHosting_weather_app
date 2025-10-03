@@ -1,4 +1,3 @@
-# Build & deploy backend to Azure Web App
 name: Build and deploy ASP.Net Core backend to Azure Web App
 
 on:
@@ -10,17 +9,14 @@ env:
   DOTNET_VERSION: '9.x'
   BACKEND_PROJECT: './backend/backend.csproj'
   AZURE_WEBAPP_NAME: 'my-own-supersimple-weather-app'
-  PUBLISH_FOLDER: './publish'
+  PUBLISH_FOLDER: 'publish'
+  ZIP_NAME: 'backend.zip'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -36,31 +32,27 @@ jobs:
       - name: Publish backend
         run: dotnet publish ${{ env.BACKEND_PROJECT }} -c Release -o ${{ env.PUBLISH_FOLDER }}
 
-      - name: Upload published artifact
+      - name: Zip published output
+        run: |
+          cd ${{ env.PUBLISH_FOLDER }}
+          zip -r ../${{ env.ZIP_NAME }} ./*
+
+      - name: Upload zip artifact
         uses: actions/upload-artifact@v4
         with:
-          name: backend-artifact
-          path: ${{ env.PUBLISH_FOLDER }}
+          name: backend-zip
+          path: ${{ env.ZIP_NAME }}
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    permissions:
-      contents: read
-      id-token: write
-
     steps:
-      - name: Download published artifact
+      - name: Download zip artifact
         uses: actions/download-artifact@v4
         with:
-          name: backend-artifact
-          path: ${{ env.PUBLISH_FOLDER }}
+          name: backend-zip
+          path: .
 
-      - name: Zip published output
-        run: |
-          cd ${{ env.PUBLISH_FOLDER }}
-          zip -r ../backend.zip ./*
-      
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -72,4 +64,4 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          package: ./backend.zip
+          package: ${{ env.ZIP_NAME }}
