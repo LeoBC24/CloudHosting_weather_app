@@ -42,10 +42,14 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_93512B23E2114B36909049BFD5CA264A }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_835A84E9F7684B3394294333562F1D26 }}
       
+      - name: Set Azure Web App Settings to disable Oryx
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          app-settings-json: '[{"name":"SCM_DO_BUILD_DURING_DEPLOYMENT","value":"false"}]'
+      
       - name: Deploy published folder to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           package: ${{ env.PUBLISH_FOLDER }}
-        env:
-          SCM_DO_BUILD_DURING_DEPLOYMENT: false
