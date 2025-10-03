@@ -1,9 +1,4 @@
-# Build & deploy backend to Azure Web App
 name: Build and deploy ASP.Net Core backend to Azure Web App
-
-permissions:
-  id-token: write     # Needed for OIDC login via azure/login@v2
-  contents: read      # Needed for actions/checkout and downloading artifacts
 
 on:
   push:
@@ -16,6 +11,10 @@ env:
   AZURE_WEBAPP_NAME: 'my-own-supersimple-weather-app'
   PUBLISH_FOLDER: 'publish'
   ZIP_NAME: 'backend.zip'
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   build:
@@ -41,6 +40,7 @@ jobs:
         run: |
           cd ${{ env.PUBLISH_FOLDER }}
           zip -r ../${{ env.ZIP_NAME }} ./*
+          cd ..
 
       - name: Upload zip artifact
         uses: actions/upload-artifact@v4
@@ -65,8 +65,8 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_93512B23E2114B36909049BFD5CA264A }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_835A84E9F7684B3394294333562F1D26 }}
 
-      - name: Deploy to Azure Web App
+      - name: Deploy prebuilt app to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          package: ${{ env.ZIP_NAME }}
+          package: ./backend.zip
