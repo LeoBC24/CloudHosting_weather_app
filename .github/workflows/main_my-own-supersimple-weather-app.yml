@@ -1,4 +1,9 @@
+# Build & deploy backend to Azure Web App
 name: Build and deploy ASP.Net Core backend to Azure Web App
+
+permissions:
+  id-token: write     # Needed for OIDC login via azure/login@v2
+  contents: read      # Needed for actions/checkout and downloading artifacts
 
 on:
   push:
