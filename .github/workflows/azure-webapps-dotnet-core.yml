@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read   # id-token not needed for publish profile
+  contents: read
 
 jobs:
   build:
