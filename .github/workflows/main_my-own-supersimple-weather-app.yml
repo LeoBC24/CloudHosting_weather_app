@@ -54,7 +54,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-artifact
-          path: backend-artifact
+          path: ${{ env.PUBLISH_FOLDER }}  # <-- download to the same folder
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -67,4 +67,4 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          package: backend-artifact
+          package: ${{ env.PUBLISH_FOLDER }}  # <-- points to published files
